@@ -27,9 +27,25 @@ RCT_EXPORT_METHOD(call:(NSString *)urlString)
 {
     RCTLogInfo(@"Load URL %@", urlString);
     dispatch_sync(dispatch_get_main_queue(), ^{
-        JitsiMeetConferenceOptions *options = [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {        
+        JitsiMeetConferenceOptions *options = [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {
             builder.room = urlString;
         }];
+        [jitsiMeetView join:options];
+    });
+}
+
+RCT_EXPORT_METHOD(callWithUserInfo:(NSString *)urlString :(NSString *)avatar :(NSString *)username :(NSString *)title)
+{
+    RCTLogInfo(@"Load URL %@", urlString);
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        JitsiMeetUserInfo *info = [[JitsiMeetUserInfo alloc] initWithDisplayName:username andEmail:nil andAvatar:[NSURL URLWithString:avatar]];
+        JitsiMeetConferenceOptions *options = [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {
+            builder.room = urlString;
+            builder.subject = title;
+            builder.userInfo = info;
+            [builder setFeatureFlag:@"chat.enabled" withBoolean:NO]; // we disable the jitsi internal chat
+        }];
+
         [jitsiMeetView join:options];
     });
 }
@@ -38,7 +54,7 @@ RCT_EXPORT_METHOD(audioCall:(NSString *)urlString)
 {
     RCTLogInfo(@"Load Audio only URL %@", urlString);
     dispatch_sync(dispatch_get_main_queue(), ^{
-        JitsiMeetConferenceOptions *options = [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {        
+        JitsiMeetConferenceOptions *options = [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {
             builder.room = urlString;
             builder.audioOnly = YES;
         }];

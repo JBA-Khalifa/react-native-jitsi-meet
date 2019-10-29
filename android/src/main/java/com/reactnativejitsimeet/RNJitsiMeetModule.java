@@ -1,6 +1,7 @@
 package com.reactnativejitsimeet;
 
 import android.util.Log;
+import android.os.Bundle;
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -43,6 +44,30 @@ public class RNJitsiMeetModule extends ReactContextBaseJavaModule {
             }
         });
     }
+
+    @ReactMethod
+    public void callWithUserInfo(String url, String avatar, String username, String title) {
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (mJitsiMeetViewReference.getJitsiMeetView() != null) {
+                    Bundle userData = new Bundle();
+                    userData.putString("avatarURL", avatar);
+                    userData.putString("displayName", username);
+                    RNJitsiMeetUserInfo user = new RNJitsiMeetUserInfo(userData);
+                    RNJitsiMeetConferenceOptions options = new RNJitsiMeetConferenceOptions.Builder()
+                            .setRoom(url)
+                            .setSubject(title)
+                            .setUserInfo(user)
+                            .setFeatureFlag("chat.enabled", false)  // we disable the jitsi internal chat
+                            .setAudioOnly(false)
+                            .build();
+                    mJitsiMeetViewReference.getJitsiMeetView().join(options);
+                }
+            }
+        });
+    }
+
 
     @ReactMethod
     public void audioCall(String url) {
