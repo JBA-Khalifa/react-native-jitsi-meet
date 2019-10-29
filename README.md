@@ -5,7 +5,80 @@ React native wrapper for Jitsi Meet SDK
 
 `npm install react-native-jitsi-meet --save` 
 
-## Use
+For versions higher than 2.0.0, you need to add the following piece of code in your ```metro.config.js``` file to avoid conflicts between react-native-jitsi-meet and react-native in metro bundler.
+
+```
+const blacklist = require('metro-config/src/defaults/blacklist');
+
+module.exports = {
+  resolver: {
+    blacklistRE: blacklist([
+      /ios\/Pods\/JitsiMeetSDK\/Frameworks\/JitsiMeet.framework\/assets\/node_modules\/react-native\/.*/,
+    ]),
+  },
+};
+```
+
+For iOS, you'll need to modify your Podfile to have ```platform :ios, '10.0'``` and execute ```pod install```
+
+## Use (>= 2.0.0)
+
+The following component is an example of use:
+
+```
+import React from 'react';
+import { View } from 'react-native';
+import JitsiMeet, { JitsiMeetView } from 'react-native-jitsi-meet';
+
+class VideoCall extends React.Component {
+  constructor(props) {
+    super(props);
+    this.onConferenceTerminated = this.onConferenceTerminated.bind(this);
+    this.onConferenceJoined = this.onConferenceJoined.bind(this);
+    this.onConferenceWillJoin = this.onConferenceWillJoin.bind(this);
+  }
+
+  componentDidMount() {
+    setTimeout(() => {
+      const url = self.props.navigation.getParam('url');
+      JitsiMeet.call(url);
+      /* You can also use JitsiMeet.audioCall(url) for audio only call */
+      /* You can programmatically end the call with JitsiMeet.endCall() */
+    }, 1000);
+  }
+
+  onConferenceTerminated(nativeEvent) {
+    /* Conference terminated event */
+  }
+
+  onConferenceJoined(nativeEvent) {
+    /* Conference joined event */
+  }
+
+  onConferenceWillJoin(nativeEvent) {
+    /* Conference will join event */
+  }
+
+  render() {
+    return (
+      <View style={{ backgroundColor: 'black' }}>
+        <JitsiMeetView onConferenceTerminated={this.onConferenceTerminated} onConferenceJoined={this.onConferenceJoined} onConferenceWillJoin={this.onConferenceWillJoin} style={{ flex: 1, height: '100%', width: '100%' }} />
+      </View>
+    );
+  }
+}
+
+export default VideoCall;
+```
+### Events
+
+You can add listeners for the following events:
+- onConferenceJoined
+- onConferenceTerminated
+- onConferenceWillJoin
+
+
+## Use (< 2.0.0 and RN<0.60)
 
 In your component, 
 
@@ -28,13 +101,29 @@ In your component,
 
 You can add listeners for the following events:
 - CONFERENCE_JOINED
-- CONFERENCE_FAILED
 - CONFERENCE_LEFT
 - CONFERENCE_WILL_JOIN
-- CONFERENCE_WILL_LEAVE
-- LOAD_CONFIG_ERROR
 
-## iOS Manual Install
+## iOS Configuration
+
+1.) navigate to `<ProjectFolder>/ios/<ProjectName>/`  
+2.) edit `Info.plist` and add the following lines
+
+```
+<key>NSCameraUsageDescription</key>
+<string>Camera Permission</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Microphone Permission</string>
+```
+3.) in `Info.plist`, make sure that 
+```
+<key>UIBackgroundModes</key>
+<array>
+</array>
+```
+contains `<string>voip</string>`
+
+## iOS Manual Install (deprecated for RN >= 0.60)
 ### Step 1. Add Files Into Project
 - 1-1.) in Xcode: Right click `Libraries` ➜ `Add Files to [project]`  
 - 1-2.) choose `node_modules/react-native-jitsi-meet/ios/RNJitsiMeet.xcodeproj` then `Add`  
@@ -64,18 +153,18 @@ This will create a navigation controller to be able to navigate between the Jits
 2-2.) edit BOTH `Framework Search Paths` and `Library Search Paths`  
 2-3.) add path on BOTH sections with: `$(SRCROOT)/../node_modules/react-native-jitsi-meet/ios` with `recursive`  
 
-## Step 3. Change General Setting and Embed Framework
+### Step 3. Change General Setting and Embed Framework
 
 3-1.) go to `General` tab  
 3-2.) change `Deployment Target` to `8.0`  
 3-3.) add `WebRTC.framework` and `JitsiMeet.framework` in `Embedded Binaries` 
 
-## Step 4. Link/Include Necessary Libraries
+### Step 4. Link/Include Necessary Libraries
 
 - 4-1.) click `Build Phases` tab, open `Link Binary With Libraries`  
 - 4-2.) add `libRNJitsiMeet.a`  
 - 4-3.) make sure `WebRTC.framework` and `JitsiMeet.framework` linked  
-- 4-4.) add the following libraries:  
+- 4-4.) add the following libraries depending on your version of XCode, some libraries might exist or not:  
 
 ```
 AVFoundation.framework
@@ -88,6 +177,7 @@ VideoToolbox.framework
 libc.tbd
 libsqlite3.tbd
 libstdc++.tbd
+libc++.tbd
 ```
 
 - 4-5.) Under `Build setting` set `Dead Code Stripping` to `No`, set `Enable Bitcode` to `No` and `Always Embed Swift Standard Libraries` to `Yes`
@@ -135,30 +225,15 @@ done
 ```
 This will run a script everytime you build to clean the unwanted architecture
 
-## Step 5. Add Permissions
-
-5-1.) navigate to `<ProjectFolder>/ios/<ProjectName>/`  
-5-2.) edit `Info.plist` and add the following lines
-
-```
-<key>NSCameraUsageDescription</key>
-<string>Camera Permission</string>
-<key>NSMicrophoneUsageDescription</key>
-<string>Microphone Permission</string>
-```
-5-3.) in `Info.plist`, make sure that 
-```
-<key>UIBackgroundModes</key>
-<array>
-</array>
-```
-contains `<string>voip</string>`
-
-## Android Manual Install
+## Android Manual Install (deprecated for RN >= 0.60)
 
 1.) In `android/app/src/main/AndroidManifest.xml` add these permissions
 
 ```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools" // <--- Add this line if not already existing
+
+...
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-feature android:name="android.hardware.camera" />
 <uses-feature android:name="android.hardware.camera.autofocus"/>
@@ -187,6 +262,19 @@ project(':react-native-jitsi-meet').projectDir = new File(rootProject.projectDir
 
 4.) In `android/app/build.gradle`, add react-native-jitsi-meet to dependencies
 ```gradle
+android {
+  ...
+  packagingOptions {
+      pickFirst 'lib/x86/libc++_shared.so'
+      pickFirst 'lib/x86/libjsc.so'
+      pickFirst 'lib/x86_64/libjsc.so'
+      pickFirst 'lib/arm64-v8a/libjsc.so'
+      pickFirst 'lib/arm64-v8a/libc++_shared.so'
+      pickFirst 'lib/x86_64/libc++_shared.so'
+      pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+      pickFirst 'lib/armeabi-v7a/libjsc.so'
+  }
+}
 dependencies {
   ...
     implementation(project(':react-native-jitsi-meet'))
@@ -221,11 +309,13 @@ allprojects {
     }
 }
 ```
+and set your minSdkVersion to be at least 21.
 
 6.) In `android/app/src/main/java/com/xxx/MainApplication.java`
 
 ```java
 import com.reactnativejitsimeet.JitsiMeetPackage;  // <--- Add this line
+import android.support.annotation.Nullable; // <--- Add this line if not already existing
 ...
     @Override
     protected List<ReactPackage> getPackages() {
